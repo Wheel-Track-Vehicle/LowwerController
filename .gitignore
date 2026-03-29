@@ -1,0 +1,12 @@
+/Drivers
+/EWARM
+startup*
+*.ld
+/build
+*.cfg
+.stm32env
+.mxproject
+STM32-for-VSCode.config.yaml
+STM32Make.make
+/Middlewares
+.vscode/
