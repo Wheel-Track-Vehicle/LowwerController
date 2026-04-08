@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "motor_ctrl.h"
+#include "kinematics.h"
 
 
 
@@ -62,44 +63,56 @@ void MX_FREERTOS_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+// 轮询计数器，用于跟踪当前处理的轮子
+static uint8_t wheel_index = 0;
+
 //TODO:测试ros2串口
 /**
  * @brief  中断回调函数
  */
-// void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-// {
-//     if (huart->Instance == USART1)
-//     {
-//         if (rx_char == '\n' || rx_char == '\r' || rx_char == '!')
-//         {
-//             rx_buffer[rx_index] = '\0';
-//             if (rx_index > 0)
-//             {
-//                 Motor_ParseDebug(rx_buffer);
-//             }
-//             rx_index = 0;
-//         }
-//         else
-//         {
-//             rx_buffer[rx_index++] = rx_char;
-//             if (rx_index >= sizeof(rx_buffer))
-//                 rx_index = 0;
-//         }
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART1)
+    {
+        if (rx_char == '\n' || rx_char == '\r' || rx_char == '!')
+        {
+            rx_buffer[rx_index] = '\0';
+            if (rx_index > 0)
+            {
+                // 解析调试信息
+                int pwm_val = 0;
+                int pulse = 0;
+                
+                if (sscanf(rx_buffer, "+%d+%d", &pwm_val, &pulse) == 2)
+                {
+                    // 设置当前轮子ID
+                    current_wheel_id = wheel_index;
+                    
+                    // 解析调试信息
+                    Motor_ParseDebug(rx_buffer);
+                    
+                    // 更新轮速和里程计
+                    Kinematics_App_UpdateFromMotor(wheel_index, pulse);
+                    
+                    // 轮循到下一个轮子
+                    wheel_index = (wheel_index + 1) % WHEEL_COUNT;
+                }
+            }
+            rx_index = 0;
+        }
+        else
+        {
+            rx_buffer[rx_index++] = rx_char;
+            if (rx_index >= sizeof(rx_buffer))
+                rx_index = 0;
+        }
 
-//         HAL_UART_Receive_IT(&huart1, &rx_char, 1);
-//     }
-//     if (huart->Instance == USART2) {
-//         rx_buffer[rx_index++] = rx_char;
+        HAL_UART_Receive_IT(&huart1, &rx_char, 1);
+    }
 
-//         if (rx_char == '\n') {
-//             rx_buffer[rx_index] = '\0';
-//             Process_Upper_Command(rx_buffer);
-//             rx_index = 0;
-//         }
+}
 
-//         HAL_UART_Receive_IT(&huart2, &rx_char, 1);
-//     }
-// }
+
 /* USER CODE END 0 */
 
 /**
@@ -135,7 +148,16 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-               
+  // 初始化运动学模块
+  Kinematics_App_Init();
+  
+  // 开启所有电机的调试模式
+  Motor_SpeedInit(WHEEL_FRONT_RIGHT);
+  Motor_SpeedInit(WHEEL_FRONT_LEFT);
+  Motor_SpeedInit(WHEEL_REAR_LEFT);
+  Motor_SpeedInit(WHEEL_REAR_RIGHT);
+  
+  printf("System initialized. Ready for commands.\r\n");
   /* USER CODE END 2 */
 
   /* Init scheduler */

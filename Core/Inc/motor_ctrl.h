@@ -14,14 +14,15 @@
 #define WHEEL_DIAMETER_MM 80.0f
 #define PI                3.14f
 #define PERIOD_COUNT      50.0f         // 1秒内的20ms周期数
-#define WHEEL_ANGLE_FRONT_RIGHT    (PI / 4)     // 45°
-#define WHEEL_ANGLE_FRONT_LEFT     (3 * PI / 4) // 135°
-#define WHEEL_ANGLE_REAR_LEFT      (5 * PI / 4) // 225° 
-#define WHEEL_ANGLE_REAR_RIGHT     (7 * PI / 4) // 315°
+#define WHEEL_ANGLE_FRONT_RIGHT    (0)     // 45°
+#define WHEEL_ANGLE_FRONT_LEFT     (0) // 135°
+#define WHEEL_ANGLE_REAR_LEFT      (0) // 225° 
+#define WHEEL_ANGLE_REAR_RIGHT     (0) // 315°
 // 运动控制参数
 #define MAX_PWM_VALUE      2500    // 最大PWM值
 #define MIN_PWM_VALUE      0500    // 最小PWM值
 #define DEFAULT_MOVE_TIME  1000    // 默认运动时间(ms)
+#define WHEEL_COUNT        4       // 轮子数量
 
 typedef enum {
     WHEEL_FRONT_RIGHT = 3,  // 右前轮 - ID 1
@@ -33,6 +34,11 @@ typedef enum {
 static uint8_t rx_char;
 static char rx_buffer[64];
 static uint8_t rx_index = 0;
+
+// 全局数组，存储每个轮子的速度和RPS
+extern float motor_rps[WHEEL_COUNT];       // 每个轮子的每秒旋转圈数
+extern float motor_speed[WHEEL_COUNT];     // 每个轮子的速度（mm/s）
+extern uint8_t current_wheel_id;           // 当前正在接收数据的轮子ID
 
 
 
@@ -48,6 +54,9 @@ void Motor_EnableDebug(uint8_t id);
 void Motor_SetSpeed(uint8_t id, float speed_mm_s, uint16_t time_ms);
 void Motor_SpeedInit(uint8_t id);
 void Process_Upper_Command(char *buf);
+
+
+
 
 
 // 调试信息解析函数

@@ -1,7 +1,8 @@
 #include "motor_ctrl.h"
 // 最新测速值
-float motor_rps = 0;       // 每秒旋转圈数
-float motor_speed = 0;     // mm/s
+float motor_rps[WHEEL_COUNT] = {0};       // 每个轮子的每秒旋转圈数
+float motor_speed[WHEEL_COUNT] = {0};     // 每个轮子的速度（mm/s）
+uint8_t current_wheel_id = 0;           // 当前正在接收数据的轮子ID
 
 
 
@@ -178,13 +179,13 @@ void Motor_ParseDebug(const char *msg)
     {
         // 计算 RPS
         float rev_per_period = (float)pulse / (float)HALL_PER_REV;
-        motor_rps = rev_per_period * PERIOD_COUNT;
+        motor_rps[current_wheel_id] = rev_per_period * PERIOD_COUNT;
 
         // 计算线速度 mm/s
-        motor_speed = motor_rps * PI * WHEEL_DIAMETER_MM;
+        motor_speed[current_wheel_id] = motor_rps[current_wheel_id] * PI * WHEEL_DIAMETER_MM;
 
-        printf("[DEBUG] pulse=%d  RPS=%.3f  Speed=%.2f mm/s\r\n",
-            pulse, motor_rps, motor_speed);
+        printf("[DEBUG] Wheel %d: pulse=%d  RPS=%.3f  Speed=%.2f mm/s\r\n",
+            current_wheel_id, pulse, motor_rps[current_wheel_id], motor_speed[current_wheel_id]);
     }
 }
 
@@ -204,6 +205,9 @@ void Motor_EnableDebug(uint8_t id)
  */
 void Motor_SpeedInit(uint8_t id)
 {
+    // 设置当前轮子ID
+    current_wheel_id = id;
+    
     Motor_EnableDebug(id);
 
     HAL_Delay(20);
@@ -211,7 +215,7 @@ void Motor_SpeedInit(uint8_t id)
     // 开启串口接收中断
     HAL_UART_Receive_IT(&huart1, &rx_char, 1);
 
-    printf("Motor Speed Measure Init OK.\r\n");
+    printf("Motor Speed Measure Init OK for wheel %d.\r\n", id);
 }
 
 /**
@@ -229,8 +233,21 @@ void Process_Upper_Command(char *buf)
     }
 }
 
+float get_motor_speed(uint8_t id)
+{
+    // 初始化电机速度测量
+    Motor_SpeedInit(id);
+    
+    // 等待一段时间，让电机有时间发送调试信息
+    HAL_Delay(50);
+    
+    // 返回指定轮子的速度（mm/s）
+    return motor_speed[id];
+}
+
+
 /**
- * @brief  计算单个麦轮的速度分量
+ * @brief  计算给定轮在给定速度下的PWM值
  * @param  vx: X方向速度分量 (-1000 ~ +1000)
  * @param  vy: Y方向速度分量 (-1000 ~ +1000)  
  * @param  wz: 旋转速度分量 (-1000 ~ +1000)
