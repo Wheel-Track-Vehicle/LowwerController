@@ -7,60 +7,15 @@
 - **stm32型号**: stm32F407ZGT6
 - **cubemx版本**: >=6.15.0
 
-# 目录结构(开发中)
-- `lowwer_computer` :下位机代码，包括底盘控制和硬件驱动代码
-- `upper_computer` :上位机代码，主要为ros2的各个功能包、视觉识别等
-    - `ros2_ws` :ros2工作区
-        - `robot_bring_up` :机器人启动功能包
-        - `robot_base_controller` :底盘控制功能包
-        - `robot_arm_controller` :机械臂控制功能包
-        - `robot_state_manager` :系统状态管理功能包
-        - `robot_description` :机器人URDF模型和描述文件
-        - `robot_teleop` :遥控操作功能包
-        - `robot_sensor_fusion` :传感器数据融合功能包
-        - `robot_sensor_drivers` :传感器驱动功能包
-        - `robot_nav` :导航功能包
-	- `robot_application` :导航设置功能包
-	- `robot_moveit_config` :机械臂仿真设置功能包
-    - `detection` :视觉识别相关代码
-# 待办
-- [ ] 电控
-    - [ ] 硬件调试
-        - [x] 履带轮电机
-        - [x] 麦轮电机
-        - [ ] 机械臂
-        - [x] 雷达
-        - [ ] 六自由度IMU
-    - [ ] 下位机控制
-        - [ ] 履带轮控制
-        - [x] 麦轮控制
-        - [ ] 机械臂控制
-    
-    - [ ] 上位机功能包开发
-        - [ ] 整体机器人启动开发
-        - [ ] 底盘控制开发
-        - [ ] 机械臂控制开发
-        - [ ] 系统状态管理
-        - [ ] 机器人URDF模型和描述文件
-        - [ ] 遥控操作
-        - [ ] 传感器数据融合
-        - [ ] 传感器驱动
+# 使用教程
 
-- [ ] 视觉与导航
-    - [ ] 路径规划
-    - [ ] 视觉识别
-
-- [ ] 综合调试
-
-# 使用教程(开发中)
-
-## 下位机stm32的ros2环境部署
+## stm32的ros2环境部署
 ### 上位机端
 **安装micro-Ros构建系统**
 
 安装micro-Ros构建系统实际上是安装micro_ros_setup功能包，将micro_ros_stm32cubemx_utils构造静态库也是借助于这个功能包
 具体安装步骤如下：
-#### 1. 首先在终端source一下`setup.bash`
+#### 1. 运行`setup.bash`脚本
 ```bash
 # Source the ROS 2 installation
 source /opt/ros/$ROS_DISTRO/setup.bash
@@ -140,7 +95,7 @@ print_cflags:
    @echo $(CFLAGS)
 ```
 
-配置好docker环境，根据自己的ros2版本选择镜像，拉取镜像并运行（此过程可能因为网络原因报错，有时候需要多次执行，多次执行后成功）
+使用docker,根据自己的ros2版本选择镜像，拉取镜像并运行（此过程可能因为网络原因报错，有时候需要多次执行，多次执行后成功）
 
 ```bash
 sudo docker pull microros/micro_ros_static_library_builder:humble
@@ -225,139 +180,4 @@ ros2 node list
 /cubemx_node
 ```
 即为成功
-
-## 雷达驱动(有线串口)
-
-### 说明
-本项目采用的为鱼香ROS的FishBot二驱机器人的配套雷达EAI-X2，在其基础上进行二次开发
-
-### 驱动安装步骤
-
-#### 1.下载源码到工作区目录
-```bash
-git clone https://github.com/fishros/ydlidar_ros2 -b  v1.0.0/fishbot 
-```
-
-#### 2.修改配置文件
-将文件`ydlidar_ros2/params/ydlidar.yaml`的串口编号修改为自己的串口编号(一般为`/dev/ttyUSB0`,可通过`ls /dev/ttyUSB*`进行查询),如下:
-
-```yaml
-ydlidar_node:
-  ros__parameters:
-    port: /dev/ttyUSB0
-    frame_id: laser_frame
-    ignore_array: ""
-
-```
-
-#### 3.编译并运行
-```bash
-colcon build
-#修改串口权限
-sudo chmod 666 /dev/ttyUSB0
-source install/setup.bash
-ros2 launch ydlidar ydlidar_launch.py
-```
-出现以下结果即表明成功:
-
-```bash
----
-[INFO] [launch]: All log files can be found below /home/pi/.ros/log/2023-07-21-23-13-28-893425-raspberrypi-4518
-[INFO] [launch]: Default logging verbosity is set to INFO
-[INFO] [ydlidar_node-1]: process started with pid [4539]
-[INFO] [static_transform_publisher-2]: process started with pid [4541]
-[static_transform_publisher-2] [WARN] [1689952409.891692804] []: Old-style arguments are deprecated; see --help for new-style arguments
-[static_transform_publisher-2] [INFO] [1689952409.975433434] [static_tf_pub_laser]: Spinning until stopped - publishing transform
-[static_transform_publisher-2] translation: ('0.020000', '0.000000', '0.000000')
-[static_transform_publisher-2] rotation: ('0.000000', '0.000000', '0.000000', '1.000000')
-[static_transform_publisher-2] from 'base_link' to 'laser_frame'
-[ydlidar_node-1] [YDLIDAR INFO] Current ROS Driver Version: 1.4.5
-[ydlidar_node-1] [YDLIDAR]:SDK Version: 1.4.5
-[ydlidar_node-1] [YDLIDAR]:Lidar running correctly ! The health status: good
-[ydlidar_node-1] [YDLIDAR] Connection established in [/dev/ttyUSB0][115200]:
-[ydlidar_node-1] Firmware version: 1.5
-[ydlidar_node-1] Hardware version: 1
-[ydlidar_node-1] Model: S4
-[ydlidar_node-1] Serial: 2020112400007024
-[ydlidar_node-1] [YDLIDAR]:Fixed Size: 370
-[ydlidar_node-1] [YDLIDAR]:Sample Rate: 3K
-[ydlidar_node-1] [YDLIDAR INFO] Current Sampling Rate : 3K
-[ydlidar_node-1] [YDLIDAR INFO] Now YDLIDAR is scanning ......
-```
-
-## 导航
-
-### 配置环境
-安装好`navigation2`
-```bash
-sudo apt install ros-$ROS_DISTRO-navigation2
-sudo apt install ros-$ROS_DISTRO-nav2-bringup
-```
-### 导航参数配置
-在`robot_nav/config/nav2_param.config`文件进行导航参数的配置。具体参数的含义见[Nav2 Configuration Guide](https://docs.nav2.org/configuration/index.html)
-
-
-## 仿真
-
-说明:仿真小车模型使用fishbot开源模型[fishbot](https://github.com/fishros/ros2bookcode/tree/master/chapt6/chapt6_ws/src/fishbot_description)
-
-### 环境配置
-若想进行仿真,请确保安装好以下依赖
-```bash
-sudo apt install ros-$ROS_DISTRO-slam-toolbox
-sudo apt install ros-$ROS_DISTRO-ros2-control
-sudo apt install ros-$ROS_DISTRO-ros2-controllers
-sudo apt install ros-$ROS_DISTRO-gazebo-ros2-control
-sudo apt install ros-$ROS_DISTRO-rqt-*
-sudo apt install ros-$ROS_DISTRO-robot-state-publisher
-sudo apt install ros-$ROS_DISTRO-joint-state-publisher
-sudo apt install ros-$ROS_DISTRO-gazebo-ros-pkgs
-```
-
-
-# 温馨提示
-
-若使用VsCode进行源码编辑时爆红，可在`.vscode`文件夹下新建`c_cpp_properties.json`文件，写入：
-```json
-{
-  "configurations": [
-    {
-      "name": "Linux",
-      "includePath": [
-        "${workspaceFolder}/**"
-      ],
-      "defines": [
-        "USE_HAL_DRIVER",
-        "STM32F407xx"
-      ],
-      "compilerPath": "/usr/bin/clang-14",
-      "cStandard": "c17",
-      "cppStandard": "c++14",
-      "intelliSenseMode": "linux-clang-x64"
-    },
-    {
-      "name": "STM32",
-      "includePath": [
-        "Core/Inc",
-        "Drivers/CMSIS/Device/ST/STM32F4xx/Include",
-        "Drivers/CMSIS/Include",
-        "Drivers/STM32F4xx_HAL_Driver/Inc",
-        "Drivers/STM32F4xx_HAL_Driver/Inc/Legacy",
-        "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2",
-        "Middlewares/Third_Party/FreeRTOS/Source/include",
-        "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F",
-        "micro_ros_stm32cubemx_utils/microros_static_library"
-      ],
-      "defines": [
-        "STM32F407xx",
-        "USE_HAL_DRIVER"
-      ],
-      "compilerPath": "/usr/bin/arm-none-eabi-gcc"
-    }
-  ],
-  "version": 4
-}
-```
-将报红库的路径添加进`includePath`字段中，其他字段可根据自己的项目进行更改。（刷新重进即可生效）
-
 
